@@ -1,0 +1,47 @@
+#include <fcntl.h>
+#include <sys/stat.h>
+#include <semaphore.h>
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+
+#define SWR "/semaphore_writer"
+#define SR "/semaphore_reader"
+
+int main() {
+    sem_t *sem_writer;
+    sem_t *sem_read;
+    FILE *buffer;
+    char buffered_text[6];
+
+    if ((sem_writer = sem_open("/writersem", O_CREAT, S_IRUSR | S_IWUSR, 0)) == SEM_FAILED) {
+        perror("Couldn't open writer semaphore");
+        exit(1);
+    }
+
+    if ((sem_read = sem_open("/readersem", O_CREAT, S_IRUSR | S_IWUSR, 0)) == SEM_FAILED) {
+        perror("Couldn't open reader semaphore");
+        exit(1);
+    }
+    while (1) {
+        sem_wait(sem_read);
+        if ((buffer = fopen("buffer.txt", "r")) < 0) {
+            perror("Can't open file for reading");
+            exit(1);
+        }
+        fread(buffered_text, 1, 6, buffer);
+        if (strcmp(buffered_text, "exit\n") == 0) {
+            fclose(buffer);
+            sem_post(sem_writer);
+            sem_close(sem_writer);
+            sem_close(sem_read);
+            break;
+        }
+        fprintf(stdout, "Reader read %s\n", buffered_text);
+	for (size_t j = 0; j <= 5; ++j) {
+	    buffered_text[j] = '\0';
+	}
+        fclose(buffer);
+        sem_post(sem_writer);
+    }
+}
