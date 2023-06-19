@@ -1,0 +1,53 @@
+﻿#include <stdio.h>
+#include <string.h>
+#include <fcntl.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <unistd.h>
+
+int main(int argc, char* argv[])
+{
+    int fd;
+    if (argc != 2)
+    {
+        printf("You should input name of the buffer file via command line arguments");
+    }
+    char* name = argv[1];
+
+    mkfifo(name, 0666);
+
+    char array1[80], array2[80];
+    while (1)
+    {
+        fd = open(name, O_WRONLY);
+        if (fd < 0)
+        {
+            printf("Something went wrong\n");
+            return 0;
+        }
+
+        // Получает текст от пользователя на вход
+        printf("What do you want to answer? ");
+        fgets(array2, 80, stdin);
+
+        // Записывает полученный текст в файл
+        write(fd, array2, strlen(array2) + 1);
+        close(fd);
+
+        // Oткрывыает файл для записи
+        fd = open(name, O_RDONLY);
+        if (fd < 0)
+        {
+            printf("Something went wrong\n");
+            return 0;
+        }
+
+        // Читает что-то из файла
+        read(fd, array1, sizeof(array1));
+
+        // Выводит информацию о сообщении от второй программы
+        printf("Programm 2: %s\n", array1);
+        close(fd);
+    }
+    return 0;
+}
