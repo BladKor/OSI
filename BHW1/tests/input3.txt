@@ -1,0 +1,2 @@
+//keyword'ы: key, map, set, hash, node
+hey map map map map map map mapmapmap
